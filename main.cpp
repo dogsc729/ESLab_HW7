@@ -253,7 +253,7 @@ int32_t main(void)
     arm_fir_f32(&Sx, inputF32 + (i * blockSize), outputF32 + (i * blockSize), blockSize);
   }
   printf("Filtered Data\n");
-    for (i=0; i<TEST_LENGTH_SAMPLES; ++i) {
+  for (i=0; i<TEST_LENGTH_SAMPLES; ++i) {
     printf(", %.4f", out_x[i]);
   }
   printf("\n\n");
@@ -273,7 +273,7 @@ int32_t main(void)
     arm_fir_f32(&Sy, inputF32 + (i * blockSize), outputF32 + (i * blockSize), blockSize);
   }
   printf("Filtered Data\n");
-    for (i=0; i<TEST_LENGTH_SAMPLES; ++i) {
+  for (i=0; i<TEST_LENGTH_SAMPLES; ++i) {
     printf(", %.4f", out_y[i]);
   }
   printf("\n\n");
@@ -293,7 +293,7 @@ int32_t main(void)
     arm_fir_f32(&Sz, inputF32 + (i * blockSize), outputF32 + (i * blockSize), blockSize);
   }
   printf("Filtered Data\n");
-    for (i=0; i<TEST_LENGTH_SAMPLES; ++i) {
+  for (i=0; i<TEST_LENGTH_SAMPLES; ++i) {
     printf(", %.4f", out_z[i]);
   }
   printf("\n\n");
