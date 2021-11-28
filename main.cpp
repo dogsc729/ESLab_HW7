@@ -121,7 +121,7 @@
 /* ----------------------------------------------------------------------
 ** Include Files
 ** ------------------------------------------------------------------- */
-#include "mbed.h“
+#include "mbed.h"
 
 #include "arm_math.h"
 #include "math_helper.h"
@@ -129,18 +129,15 @@
 #include "stm32l475e_iot01_accelero.h"
 #include "vector"
 
-#define SEMIHOSTING
 
-#if defined(SEMIHOSTING)
 #include <stdio.h>
-#endif
 
 
 /* ----------------------------------------------------------------------
 ** Macro Defines
 ** ------------------------------------------------------------------- */
 
-#define TEST_LENGTH_SAMPLES  320
+#define TEST_LENGTH_SAMPLES  64//320
 /*
 This SNR is a bit small. Need to understand why
 this example is not giving better SNR ...
@@ -162,14 +159,14 @@ this example is not giving better SNR ...
  * are defined externally in arm_fir_lpf_data.c.
  * ------------------------------------------------------------------- */
 
-extern float32_t testInput_f32_1kHz_15kHz[TEST_LENGTH_SAMPLES];
-extern float32_t refOutput[TEST_LENGTH_SAMPLES];
+// extern float32_t testInput_f32_1kHz_15kHz[TEST_LENGTH_SAMPLES];
+// extern float32_t refOutput[TEST_LENGTH_SAMPLES];
 
 /* -------------------------------------------------------------------
  * Declare Test output buffer
  * ------------------------------------------------------------------- */
 
-static float32_t testOutput[TEST_LENGTH_SAMPLES];
+// static float32_t testOutput[TEST_LENGTH_SAMPLES];
 
 /* -------------------------------------------------------------------
  * Declare State buffer of size (numTaps + blockSize - 1)
@@ -216,8 +213,12 @@ float32_t  snr;
 int32_t main(void)
 {
   uint32_t i;
-  arm_fir_instance_f32 S;
-  arm_status status;
+//   arm_fir_instance_f32 S;
+  arm_fir_instance_f32 Sx;
+  arm_fir_instance_f32 Sy;
+  arm_fir_instance_f32 Sz;
+
+//   arm_status status;
   float32_t  *inputF32, *outputF32;
 
 
@@ -227,69 +228,107 @@ int32_t main(void)
 
   int16_t pDataXYZ[3] = {0};
 
+  BSP_ACCELERO_Init();
 
-  for (int i=0; i<TEST_LENGTH_SAMPLES; ++i) {
+  for (i=0; i<TEST_LENGTH_SAMPLES; ++i) {
     BSP_ACCELERO_AccGetXYZ(pDataXYZ);
     acc_x.push_back(pDataXYZ[0]);
     acc_y.push_back(pDataXYZ[1]);
-    acc_z.push_back(pDataXYZ[2]);
-    ThisThread::sleep_for(500);
+    acc_z.push_back(pDataXYZ[2] - 1000);
+    ThisThread::sleep_for(10);
   }
   
-  printf("%.10f", acc_x[0]);
-  for (int i=0; i<TEST_LENGTH_SAMPLES; ++i) {
-    printf(", %.10f", acc_x[i]);
-  }
-  printf("\n")
 
-  /* Initialize input and output buffer pointers */
-//   inputF32 = &testInput_f32_1kHz_15kHz[0];
-//   outputF32 = &testOutput[0];
+  printf("\n\n\n X axis \n\n\n");
+  printf("Raw Data:\n\n");
+  for (i=0; i<TEST_LENGTH_SAMPLES; ++i) {
+    printf(", %f", acc_x[i]);
+  }
+  printf("\n\n");
   inputF32 = (float32_t *)&acc_x;
+  arm_fir_init_f32(&Sx, NUM_TAPS, (float32_t *)&firCoeffs32[0], &firStateF32[0], blockSize);
 
-  
-
-
-  /* Call FIR init function to initialize the instance structure. */
-  arm_fir_init_f32(&S, NUM_TAPS, (float32_t *)&firCoeffs32[0], &firStateF32[0], blockSize);
-
-  /* ----------------------------------------------------------------------
-  ** Call the FIR process function for every blockSize samples
-  ** ------------------------------------------------------------------- */
-  
-  printf("\n\n\n");
+  printf("Filtered Data\n\n");
   for(i=0; i < numBlocks; i++)
   {
-    arm_fir_f32(&S, inputF32 + (i * blockSize), outputF32 + (i * blockSize), blockSize);
-    printf("%.10f, ", *(outputF32 + (i * blockSize)));
+    arm_fir_f32(&Sx, inputF32 + (i * blockSize), outputF32 + (i * blockSize), blockSize);
+    printf("%f, ", *(outputF32 + (i * blockSize)));
   }
-  printf("\n\n\n");
+  printf("\n\n");
+
+  
+  printf("\n\n\n Y axis \n\n\n");
+  printf("Raw Data:\n\n");
+  for (i=0; i<TEST_LENGTH_SAMPLES; ++i) {
+    printf(", %f", acc_y[i]);
+  }
+  printf("\n\n");
+  inputF32 = (float32_t *)&acc_y;
+  arm_fir_init_f32(&Sy, NUM_TAPS, (float32_t *)&firCoeffs32[0], &firStateF32[0], blockSize);
+  
+  printf("Filtered Data\n\n");
+  for(i=0; i < numBlocks; i++)
+  {
+    arm_fir_f32(&Sy, inputF32 + (i * blockSize), outputF32 + (i * blockSize), blockSize);
+    printf("%f, ", *(outputF32 + (i * blockSize)));
+  }
+  printf("\n\n");
+
+
+  printf("\n\n\n Z axis \n\n\n");
+  printf("Raw Data:\n\n");
+  for (i=0; i<TEST_LENGTH_SAMPLES; ++i) {
+    printf(", %f", acc_z[i]);
+  }
+  printf("\n\n");
+  inputF32 = (float32_t *)&acc_z;
+  arm_fir_init_f32(&Sz, NUM_TAPS, (float32_t *)&firCoeffs32[0], &firStateF32[0], blockSize);
+  
+  printf("Filtered Data\n\n");
+  for(i=0; i < numBlocks; i++)
+  {
+    arm_fir_f32(&Sz, inputF32 + (i * blockSize), outputF32 + (i * blockSize), blockSize);
+    printf("%f, ", *(outputF32 + (i * blockSize)));
+  }
+  printf("\n\n");
+
+
+//   printf("\n\n\n Y axis \n\n\n");
+//   printf("Raw Data:\n\n");
+//   for (i=0; i<TEST_LENGTH_SAMPLES; ++i) {
+//     printf(", %f", acc_y[i]);
+//   }
+//   printf("\n\n");
+
+//   inputF32 = (float32_t *)&acc_y;
+//   arm_fir_init_f32(&S, NUM_TAPS, (float32_t *)&firCoeffs32[0], &firStateF32[0], blockSize);
+
+//   printf("Filtered Data\n\n");
+//   for(i=0; i < numBlocks; i++)
+//   {
+//     arm_fir_f32(&S, inputF32 + (i * blockSize), outputF32 + (i * blockSize), blockSize);
+//     printf("%.9f, ", *(outputF32 + (i * blockSize)));
+//   }
+//   printf("\n\n");
 
   /* ----------------------------------------------------------------------
   ** Compare the generated output against the reference output computed
   ** in MATLAB.
   ** ------------------------------------------------------------------- */
 
-  snr = arm_snr_f32(&refOutput[0], &testOutput[0], TEST_LENGTH_SAMPLES);
+//   snr = arm_snr_f32(&refOutput[0], &testOutput[0], TEST_LENGTH_SAMPLES);
 
-  status = (snr < SNR_THRESHOLD_F32) ? ARM_MATH_TEST_FAILURE : ARM_MATH_SUCCESS;
+//   status = (snr < SNR_THRESHOLD_F32) ? ARM_MATH_TEST_FAILURE : ARM_MATH_SUCCESS;
   
-  if (status != ARM_MATH_SUCCESS)
-  {
-#if defined (SEMIHOSTING)
-    printf("FAILURE\n");
-#else
-    while (1);                             /* main function does not return */
-#endif
-  }
-  else
-  {
-#if defined (SEMIHOSTING)
-    printf("SUCCESS\n");
-#else
-    while (1);                             /* main function does not return */
-#endif
-  }
+//   if (status != ARM_MATH_SUCCESS)
+//   {
+//     printf("FAILURE\n");
+//   }
+//   else
+//   {
+//     printf("SUCCESS\n");
+//   }
+  while (1);                             /* main function does not return */
 }
 
 /** \endlink */
