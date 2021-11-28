@@ -137,13 +137,13 @@
 ** Macro Defines
 ** ------------------------------------------------------------------- */
 
-#define TEST_LENGTH_SAMPLES  64//320
+#define TEST_LENGTH_SAMPLES  128//320
 /*
 This SNR is a bit small. Need to understand why
 this example is not giving better SNR ...
 */
 #define SNR_THRESHOLD_F32    75.0f
-#define BLOCK_SIZE            32
+#define BLOCK_SIZE           32
 
 #if defined(ARM_MATH_MVEF) && !defined(ARM_MATH_AUTOVECTORIZE)
 /* Must be a multiple of 16 */
@@ -210,106 +210,95 @@ float32_t  snr;
  * FIR LPF Example
  * ------------------------------------------------------------------- */
 
+static float32_t in_x[TEST_LENGTH_SAMPLES];
+static float32_t in_y[TEST_LENGTH_SAMPLES];
+static float32_t in_z[TEST_LENGTH_SAMPLES];
+static float32_t out_x[TEST_LENGTH_SAMPLES];
+static float32_t out_y[TEST_LENGTH_SAMPLES];
+static float32_t out_z[TEST_LENGTH_SAMPLES];
+
 int32_t main(void)
 {
   uint32_t i;
-//   arm_fir_instance_f32 S;
   arm_fir_instance_f32 Sx;
   arm_fir_instance_f32 Sy;
   arm_fir_instance_f32 Sz;
-
-//   arm_status status;
+  
   float32_t  *inputF32, *outputF32;
-
-
-  std::vector<float32_t> acc_x;
-  std::vector<float32_t> acc_y;
-  std::vector<float32_t> acc_z;
-
   int16_t pDataXYZ[3] = {0};
 
   BSP_ACCELERO_Init();
 
   for (i=0; i<TEST_LENGTH_SAMPLES; ++i) {
     BSP_ACCELERO_AccGetXYZ(pDataXYZ);
-    acc_x.push_back(pDataXYZ[0]);
-    acc_y.push_back(pDataXYZ[1]);
-    acc_z.push_back(pDataXYZ[2] - 1000);
+    in_x[i] = float(pDataXYZ[0]);
+    in_y[i] = float(pDataXYZ[1]);
+    in_z[i] = float(pDataXYZ[2]);
     ThisThread::sleep_for(10);
   }
   
 
-  printf("\n\n\n X axis \n\n\n");
-  printf("Raw Data:\n\n");
+  printf("\n\n X axis \n\n");
+  printf("Raw Data:\n");
   for (i=0; i<TEST_LENGTH_SAMPLES; ++i) {
-    printf(", %f", acc_x[i]);
+    printf(", %f", in_x[i]);
   }
   printf("\n\n");
-  inputF32 = (float32_t *)&acc_x;
+  inputF32 = &in_x[0];
   arm_fir_init_f32(&Sx, NUM_TAPS, (float32_t *)&firCoeffs32[0], &firStateF32[0], blockSize);
 
-  printf("Filtered Data\n\n");
+  outputF32 = &out_x[0];
   for(i=0; i < numBlocks; i++)
   {
     arm_fir_f32(&Sx, inputF32 + (i * blockSize), outputF32 + (i * blockSize), blockSize);
-    printf("%f, ", *(outputF32 + (i * blockSize)));
+  }
+  printf("Filtered Data\n");
+    for (i=0; i<TEST_LENGTH_SAMPLES; ++i) {
+    printf(", %.4f", out_x[i]);
   }
   printf("\n\n");
 
-  
-  printf("\n\n\n Y axis \n\n\n");
-  printf("Raw Data:\n\n");
+  printf("\n\n Y axis \n\n");
+  printf("Raw Data:\n");
   for (i=0; i<TEST_LENGTH_SAMPLES; ++i) {
-    printf(", %f", acc_y[i]);
+    printf(", %f", in_y[i]);
   }
   printf("\n\n");
-  inputF32 = (float32_t *)&acc_y;
+  inputF32 = &in_y[0];
   arm_fir_init_f32(&Sy, NUM_TAPS, (float32_t *)&firCoeffs32[0], &firStateF32[0], blockSize);
-  
-  printf("Filtered Data\n\n");
+
+  outputF32 = &out_y[0];
   for(i=0; i < numBlocks; i++)
   {
     arm_fir_f32(&Sy, inputF32 + (i * blockSize), outputF32 + (i * blockSize), blockSize);
-    printf("%f, ", *(outputF32 + (i * blockSize)));
+  }
+  printf("Filtered Data\n");
+    for (i=0; i<TEST_LENGTH_SAMPLES; ++i) {
+    printf(", %.4f", out_y[i]);
   }
   printf("\n\n");
 
-
-  printf("\n\n\n Z axis \n\n\n");
-  printf("Raw Data:\n\n");
+  printf("\n\n Z axis \n\n");
+  printf("Raw Data:\n");
   for (i=0; i<TEST_LENGTH_SAMPLES; ++i) {
-    printf(", %f", acc_z[i]);
+    printf(", %f", in_z[i]);
   }
   printf("\n\n");
-  inputF32 = (float32_t *)&acc_z;
+  inputF32 = &in_z[0];
   arm_fir_init_f32(&Sz, NUM_TAPS, (float32_t *)&firCoeffs32[0], &firStateF32[0], blockSize);
-  
-  printf("Filtered Data\n\n");
+
+  outputF32 = &out_z[0];
   for(i=0; i < numBlocks; i++)
   {
     arm_fir_f32(&Sz, inputF32 + (i * blockSize), outputF32 + (i * blockSize), blockSize);
-    printf("%f, ", *(outputF32 + (i * blockSize)));
+  }
+  printf("Filtered Data\n");
+    for (i=0; i<TEST_LENGTH_SAMPLES; ++i) {
+    printf(", %.4f", out_z[i]);
   }
   printf("\n\n");
 
 
-//   printf("\n\n\n Y axis \n\n\n");
-//   printf("Raw Data:\n\n");
-//   for (i=0; i<TEST_LENGTH_SAMPLES; ++i) {
-//     printf(", %f", acc_y[i]);
-//   }
-//   printf("\n\n");
-
-//   inputF32 = (float32_t *)&acc_y;
-//   arm_fir_init_f32(&S, NUM_TAPS, (float32_t *)&firCoeffs32[0], &firStateF32[0], blockSize);
-
-//   printf("Filtered Data\n\n");
-//   for(i=0; i < numBlocks; i++)
-//   {
-//     arm_fir_f32(&S, inputF32 + (i * blockSize), outputF32 + (i * blockSize), blockSize);
-//     printf("%.9f, ", *(outputF32 + (i * blockSize)));
-//   }
-//   printf("\n\n");
 
   /* ----------------------------------------------------------------------
   ** Compare the generated output against the reference output computed
